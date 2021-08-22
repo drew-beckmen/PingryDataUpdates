@@ -1,0 +1,6 @@
+*.csv
+.DS_Store
+.idea
+Gemfile*
+*.txt
+*.json
