@@ -49,7 +49,8 @@ def load_student(first, last, campus, veracross, grade)
     last_name: last,
     campus: campus,
     veracross_id: veracross,
-    teacher: false
+    teacher: false,
+    grade: grade
   )
 end
 
@@ -64,7 +65,7 @@ def update_grades_add_new(students)
       veracross_id = row['Person ID']
       last_name, first_name = row['Last Name'].strip, row['First Name'].strip
       grade = GRADE_MAP[row['Current Grade']]
-      campus = row['Campus'] == 'Short Hills' ? 'Short Hills' : 'Basking Ridge'
+      campus = grade <= 5 ? 'Short Hills' : 'Basking Ridge'
       load_student(first_name, last_name, campus, veracross_id, grade)
       row['Status'] = 'Added'
       number_added += 1
@@ -108,9 +109,28 @@ def retire_old_students(current_student_ids)
   puts("Retired #{number_retired} students no longer at the school.")
 end
 
+def repair_student_data(students)
+  num_updated = 0
+  students.each do |row|
+    search_key = row['Person ID']
+    find = Student.where(veracross_id: search_key).first
+    csv_grade = GRADE_MAP[row['Current Grade']]
+    if csv_grade != find.grade
+      puts("Fixing #{find.first_name} #{find.last_name} grade to #{csv_grade}")
+      find.grade = csv_grade
+      campus = csv_grade <= 5 ? 'Short Hills' : 'Basking Ridge'
+      find.campus = campus
+      find.save!
+      num_updated += 1
+    end
+  end
+  puts("Updated #{num_updated} students to fix errors in grades and campuses")
+end
+
 def update_students(students, ids)
   update_grades_add_new(students)
   retire_old_students(ids)
+  repair_student_data(students)
 end
 
 update_students(students, veracross_ids)
